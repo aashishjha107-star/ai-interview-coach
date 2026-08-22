@@ -1,5 +1,6 @@
 const express = require("express");
 const dotenv = require("dotenv");
+const cors = require("cors");
 
 dotenv.config();
 
@@ -7,23 +8,38 @@ const connectDB = require("./config/db");
 const interviewRoutes = require("./routes/interviewRoutes");
 const authRoutes = require("./routes/authRoutes");
 const testRoutes = require("./routes/testRoutes");
+
 console.log("SERVER FILE:", __filename);
-console.log("INTERVIEW ROUTES:", require.resolve("./routes/interviewRoutes"));
+console.log(
+    "INTERVIEW ROUTES:",
+    require.resolve("./routes/interviewRoutes")
+);
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-console.log("Gemini key loaded:", !!process.env.GEMINI_API_KEY);
+console.log(
+    "Gemini key loaded:",
+    !!process.env.GEMINI_API_KEY
+);
 
 // Connect to MongoDB
 connectDB();
 
 // Middleware
+app.use(cors());
 app.use(express.json());
+
+// Request logger
+app.use((req, res, next) => {
+    console.log("REQUEST RECEIVED:", req.method, req.originalUrl);
+    next();
+});
 
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/test", testRoutes);
+
 app.post("/api/interviews/test-direct", (req, res) => {
     console.log("🔥 DIRECT POST ROUTE HIT");
 
@@ -31,15 +47,12 @@ app.post("/api/interviews/test-direct", (req, res) => {
         message: "Direct POST route works"
     });
 });
+
 app.use("/api/interviews", interviewRoutes);
 
 // Home route
 app.get("/", (req, res) => {
     res.send("AI Interview Coach Backend is running!");
-});
-app.use((req, res, next) => {
-    console.log("REQUEST RECEIVED:", req.method, req.originalUrl);
-    next();
 });
 
 // Start server
